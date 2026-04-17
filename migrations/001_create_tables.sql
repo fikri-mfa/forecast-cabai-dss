@@ -10,3 +10,14 @@ CREATE TABLE IF NOT EXISTS users (
     password TEXT NOT NULL,
     created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
 );
+CREATE TABLE IF NOT EXISTS forecasts (
+    id SERIAL PRIMARY KEY,
+    user_id INTEGER REFERENCES users(id),
+    alpha NUMERIC NOT NULL,
+    beta NUMERIC NOT NULL,
+    gamma NUMERIC NOT NULL,
+    season_length INTEGER NOT NULL,
+    periods INTEGER NOT NULL,
+    result JSONB NOT NULL,
+    created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
+);

@@ -1,23 +1,30 @@
 package routes
 
 import (
-	"forecast-cabai-dss/internal/handlers"
-	"forecast-cabai-dss/internal/middlewares"
-	"net/http"
+    "forecast-cabai-dss/internal/handlers"
+    "forecast-cabai-dss/internal/middlewares"
+    "net/http"
+
+    httpSwagger "github.com/swaggo/http-swagger"
+    _ "forecast-cabai-dss/docs" // hasil generate swag init
 )
 
 func RegisterRoutes(
-	forecastHandler *handlers.ForecastHandler,
-	authHandler *handlers.AuthHandler,
+    forecastHandler *handlers.ForecastHandler,
+    authHandler *handlers.AuthHandler,
 ) http.Handler {
-	mux := http.NewServeMux()
+    mux := http.NewServeMux()
 
-	// Public routes
-	mux.HandleFunc("/register", authHandler.Register)
-	mux.HandleFunc("/login", authHandler.Login)
+    // Swagger UI
+    mux.Handle("/swagger/", httpSwagger.WrapHandler)
 
-	// Protected routes
-	mux.Handle("/forecast", middlewares.AuthMiddleware(http.HandlerFunc(forecastHandler.Forecast)))
+    // Public routes
+    mux.HandleFunc("/register", authHandler.Register)
+    mux.HandleFunc("/login", authHandler.Login)
 
-	return mux
+    // Protected routes
+    mux.Handle("/forecast", middlewares.AuthMiddleware(http.HandlerFunc(forecastHandler.Forecast)))
+    mux.Handle("/forecast/history", middlewares.AuthMiddleware(http.HandlerFunc(forecastHandler.GetHistory)))
+
+    return middlewares.CORSMiddleware(mux)
 }

@@ -1,45 +1,57 @@
 package services
 
 import (
-	"errors"
-
 	"forecast-cabai-dss/internal/domain"
 	"forecast-cabai-dss/internal/forecasting"
 	"forecast-cabai-dss/internal/repositories"
 )
 
 type ForecastService struct {
-	hargaRepo repositories.HargaRepository
+	hargaRepo    *repositories.HargaPostgresRepository
+	forecastRepo *repositories.ForecastPostgresRepository
 }
 
-func NewForecastService(hargaRepo repositories.HargaRepository) *ForecastService {
+func NewForecastService(
+	hargaRepo *repositories.HargaPostgresRepository,
+	forecastRepo *repositories.ForecastPostgresRepository,
+) *ForecastService {
 	return &ForecastService{
-		hargaRepo: hargaRepo,
+		hargaRepo:    hargaRepo,
+		forecastRepo: forecastRepo,
 	}
 }
 
-func (s *ForecastService) CalculateForecast(
-	param domain.ParameterTES,
-	forecastPeriods int,
-) ([]float64, error) {
-
-	data, err := s.hargaRepo.GetAllHarga()
+func (s *ForecastService) CalculateForecast(userID int, params domain.ParameterTES, periods int) (domain.ForecastResponse, error) {
+	harga, err := s.hargaRepo.GetAllHarga()
 	if err != nil {
-		return nil, err
+		return domain.ForecastResponse{}, err
 	}
 
-	if len(data) < param.SeasonLength {
-		return nil, errors.New("data historis tidak cukup untuk forecasting")
-	}
-
-	result := forecasting.TripleExponentialSmoothing(
-		data,
-		param.Alpha,
-		param.Beta,
-		param.Gamma,
-		param.SeasonLength,
-		forecastPeriods,
+	tesResult := forecasting.TripleExponentialSmoothing(
+		harga,
+		params.Alpha,
+		params.Beta,
+		params.Gamma,
+		params.SeasonLength,
+		periods,
 	)
 
-	return result.Forecast, nil
+	mape := forecasting.MAPE(harga, tesResult.Fitted)
+	rmse := forecasting.RMSE(harga, tesResult.Fitted)
+
+	if err := s.forecastRepo.SaveForecast(userID, params, periods, tesResult.Forecast); err != nil {
+		return domain.ForecastResponse{}, err
+	}
+
+	return domain.ForecastResponse{
+		Forecast: tesResult.Forecast,
+		Evaluation: domain.EvaluationResult{
+			MAPE: mape,
+			RMSE: rmse,
+		},
+	}, nil
+}
+
+func (s *ForecastService) GetForecastsByUserID(userID int) ([]domain.Forecast, error) {
+	return s.forecastRepo.GetForecastsByUserID(userID)
 }

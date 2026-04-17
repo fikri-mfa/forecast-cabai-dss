@@ -1,3 +1,12 @@
+// @title           Forecast Cabai DSS API
+// @version         1.0
+// @description     API untuk sistem pendukung keputusan forecast harga cabai menggunakan Triple Exponential Smoothing
+// @host            localhost:9090
+// @BasePath        /
+// @securityDefinitions.apikey BearerAuth
+// @in header
+// @name Authorization
+// @description Masukkan token dengan format: Bearer {token}
 package main
 
 import (
@@ -23,9 +32,10 @@ func main() {
 	// Repositories
 	hargaRepo := repositories.NewHargaPostgresRepository(db)
 	userRepo := repositories.NewUserPostgresRepository(db)
+	forecastRepo := repositories.NewForecastPostgresRepository(db)
 
 	// Services
-	forecastService := services.NewForecastService(hargaRepo)
+	forecastService := services.NewForecastService(hargaRepo, forecastRepo)
 	authService := services.NewAuthService(userRepo)
 
 	// Handlers

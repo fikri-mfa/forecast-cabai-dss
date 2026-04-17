@@ -1,0 +1,194 @@
+basePath: /
+definitions:
+  forecast-cabai-dss_internal_domain.ForecastRequest:
+    properties:
+      alpha:
+        example: 0.2
+        type: number
+      beta:
+        example: 0.1
+        type: number
+      gamma:
+        example: 0.1
+        type: number
+      periods:
+        example: 3
+        type: integer
+      season_length:
+        example: 12
+        type: integer
+    type: object
+  forecast-cabai-dss_internal_domain.LoginRequest:
+    properties:
+      password:
+        example: password123
+        type: string
+      username:
+        example: johndoe
+        type: string
+    type: object
+  forecast-cabai-dss_internal_domain.LoginResponse:
+    properties:
+      token:
+        example: eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9...
+        type: string
+    type: object
+  forecast-cabai-dss_internal_domain.RegisterRequest:
+    properties:
+      password:
+        example: password123
+        type: string
+      username:
+        example: johndoe
+        type: string
+    type: object
+host: localhost:9090
+info:
+  contact: {}
+  description: API untuk sistem pendukung keputusan forecast harga cabai menggunakan
+    Triple Exponential Smoothing
+  title: Forecast Cabai DSS API
+  version: "1.0"
+paths:
+  /forecast:
+    post:
+      consumes:
+      - application/json
+      description: Menghitung prediksi harga cabai menggunakan Triple Exponential
+        Smoothing
+      parameters:
+      - description: Parameter TES (opsional, ada default value)
+        in: body
+        name: request
+        schema:
+          $ref: '#/definitions/forecast-cabai-dss_internal_domain.ForecastRequest'
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: OK
+          schema:
+            additionalProperties: true
+            type: object
+        "401":
+          description: Unauthorized
+          schema:
+            additionalProperties:
+              type: string
+            type: object
+        "500":
+          description: Internal Server Error
+          schema:
+            additionalProperties:
+              type: string
+            type: object
+      security:
+      - BearerAuth: []
+      summary: Hitung forecast harga cabai
+      tags:
+      - Forecast
+  /forecast/history:
+    get:
+      description: Mengambil semua riwayat forecast milik user yang sedang login
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: OK
+          schema:
+            additionalProperties: true
+            type: object
+        "401":
+          description: Unauthorized
+          schema:
+            additionalProperties:
+              type: string
+            type: object
+        "500":
+          description: Internal Server Error
+          schema:
+            additionalProperties:
+              type: string
+            type: object
+      security:
+      - BearerAuth: []
+      summary: Ambil riwayat forecast
+      tags:
+      - Forecast
+  /login:
+    post:
+      consumes:
+      - application/json
+      description: Login dan mendapatkan JWT token
+      parameters:
+      - description: Data login
+        in: body
+        name: request
+        required: true
+        schema:
+          $ref: '#/definitions/forecast-cabai-dss_internal_domain.LoginRequest'
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: OK
+          schema:
+            $ref: '#/definitions/forecast-cabai-dss_internal_domain.LoginResponse'
+        "400":
+          description: Bad Request
+          schema:
+            additionalProperties:
+              type: string
+            type: object
+        "401":
+          description: Unauthorized
+          schema:
+            additionalProperties:
+              type: string
+            type: object
+      summary: Login user
+      tags:
+      - Auth
+  /register:
+    post:
+      consumes:
+      - application/json
+      description: Mendaftarkan user baru ke sistem
+      parameters:
+      - description: Data registrasi
+        in: body
+        name: request
+        required: true
+        schema:
+          $ref: '#/definitions/forecast-cabai-dss_internal_domain.RegisterRequest'
+      produces:
+      - application/json
+      responses:
+        "201":
+          description: Created
+          schema:
+            additionalProperties:
+              type: string
+            type: object
+        "400":
+          description: Bad Request
+          schema:
+            additionalProperties:
+              type: string
+            type: object
+        "500":
+          description: Internal Server Error
+          schema:
+            additionalProperties:
+              type: string
+            type: object
+      summary: Register user baru
+      tags:
+      - Auth
+securityDefinitions:
+  BearerAuth:
+    description: 'Masukkan token dengan format: Bearer {token}'
+    in: header
+    name: Authorization
+    type: apiKey
+swagger: "2.0"
