@@ -1,12 +1,3 @@
-// @title           Forecast Cabai DSS API
-// @version         1.0
-// @description     API untuk sistem pendukung keputusan forecast harga cabai menggunakan Triple Exponential Smoothing
-// @host            localhost:9090
-// @BasePath        /
-// @securityDefinitions.apikey BearerAuth
-// @in header
-// @name Authorization
-// @description Masukkan token dengan format: Bearer {token}
 package main
 
 import (
@@ -37,12 +28,16 @@ func main() {
 	// Services
 	forecastService := services.NewForecastService(hargaRepo, forecastRepo)
 	authService := services.NewAuthService(userRepo)
+	hargaService := services.NewHargaService(hargaRepo)
+	dashboardService := services.NewDashboardService(hargaRepo, forecastRepo)
 
 	// Handlers
 	forecastHandler := handlers.NewForecastHandler(forecastService)
 	authHandler := handlers.NewAuthHandler(authService)
+	hargaHandler := handlers.NewHargaHandler(hargaService)
+	dashboardHandler := handlers.NewDashboardHandler(dashboardService)
 
-	router := routes.RegisterRoutes(forecastHandler, authHandler)
+	router := routes.RegisterRoutes(forecastHandler, authHandler, hargaHandler, dashboardHandler)
 
 	log.Println("Server running at :9090")
 	log.Fatal(http.ListenAndServe(":9090", router))

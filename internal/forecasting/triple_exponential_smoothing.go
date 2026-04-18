@@ -17,38 +17,62 @@ func TripleExponentialSmoothing(
 	n := len(data)
 	level := make([]float64, n)
 	trend := make([]float64, n)
-	seasonal := make([]float64, n)
-	forecast := make([]float64, forecastPeriods)
+	seasonal := make([]float64, n+forecastPeriods)
 	fitted := make([]float64, n)
+	forecast := make([]float64, forecastPeriods)
 
-	// 1. Inisialisasi awal
-	level[0] = data[0]
-	trend[0] = data[1] - data[0]
+	// 1. Inisialisasi Level — rata-rata periode pertama
+	sum1 := 0.0
 	for i := 0; i < seasonLength; i++ {
-		seasonal[i] = data[i] - level[0]
+		sum1 += data[i]
 	}
-	fitted[0] = level[0] + trend[0] + seasonal[0]
+	L := sum1 / float64(seasonLength)
 
-	// 2. Iterasi data historis
-	for i := 1; i < n; i++ {
-		seasonIndex := i % seasonLength
-		level[i] = alpha*(data[i]-seasonal[seasonIndex]) +
-			(1-alpha)*(level[i-1]+trend[i-1])
-		trend[i] = beta*(level[i]-level[i-1]) +
-			(1-beta)*trend[i-1]
-		seasonal[seasonIndex] = gamma*(data[i]-level[i]) +
-			(1-gamma)*seasonal[seasonIndex]
-		fitted[i] = level[i] + trend[i] + seasonal[seasonIndex]
+	// Inisialisasi Level periode kedua — untuk hitung Trend
+	sum2 := 0.0
+	for i := seasonLength; i < 2*seasonLength; i++ {
+		sum2 += data[i]
+	}
+	L2 := sum2 / float64(seasonLength)
+
+	// Inisialisasi Trend
+	T := (L2 - L) / float64(seasonLength)
+
+	// 2. Inisialisasi Seasonal — multiplicative: S[i] = harga[i] / L
+	S := make([]float64, seasonLength)
+	for i := 0; i < seasonLength; i++ {
+		S[i] = data[i] / L
 	}
 
-	// 3. Forecast ke depan
-	lastLevel := level[n-1]
-	lastTrend := trend[n-1]
+	// 3. Iterasi semua data
+	for t := 0; t < n; t++ {
+		i := t % seasonLength
+		if t < seasonLength {
+			// Periode awal — belum ada forecast
+			fitted[t] = 0
+			level[t] = L
+			trend[t] = T
+			seasonal[t] = S[i]
+		} else {
+			// Forecast = (L + T) * S
+			fitted[t] = (L + T) * S[i]
+
+			// Update Level, Trend, Seasonal
+			L_prev := L
+			L = alpha*(data[t]/S[i]) + (1-alpha)*(L+T)
+			T = beta*(L-L_prev) + (1-beta)*T
+			S[i] = gamma*(data[t]/L) + (1-gamma)*S[i]
+
+			level[t] = L
+			trend[t] = T
+			seasonal[t] = S[i]
+		}
+	}
+
+	// 4. Forecast ke depan
 	for i := 1; i <= forecastPeriods; i++ {
 		seasonIndex := (n + i - 1) % seasonLength
-		forecast[i-1] = lastLevel +
-			float64(i)*lastTrend +
-			seasonal[seasonIndex]
+		forecast[i-1] = (L + float64(i)*T) * S[seasonIndex]
 	}
 
 	return TESResult{
@@ -56,6 +80,6 @@ func TripleExponentialSmoothing(
 		Fitted:   fitted,
 		Level:    level,
 		Trend:    trend,
-		Seasonal: seasonal,
+		Seasonal: seasonal[:n],
 	}
 }

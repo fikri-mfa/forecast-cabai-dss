@@ -52,7 +52,45 @@ type EvaluationResult struct {
 	RMSE float64 `json:"rmse" example:"1250.75"`
 }
 
+type TesPerhitungan struct {
+	ID         int      `json:"id"`
+	ForecastID int      `json:"forecast_id"`
+	Periode    int      `json:"periode"`
+	Tanggal    string   `json:"tanggal"`
+	HargaAsli  float64  `json:"harga_asli"`
+	Level      *float64 `json:"level"`
+	Trend      *float64 `json:"trend"`
+	Seasonal   *float64 `json:"seasonal"`
+	Forecast   *float64 `json:"forecast"`
+}
+
 type ForecastResponse struct {
-	Forecast   []float64        `json:"forecast"`
-	Evaluation EvaluationResult `json:"evaluation"`
+	Forecast      []float64        `json:"forecast"`
+	Evaluation    EvaluationResult `json:"evaluation"`
+	Perhitungan   []TesPerhitungan `json:"perhitungan"`
+	ParamsUsed    ParameterTES     `json:"params_used"`
+	AutoOptimized bool             `json:"auto_optimized"`
+}
+type HargaRow struct {
+	ID      int     `json:"id"`
+	Tanggal string  `json:"tanggal"`
+	Harga   float64 `json:"harga"`
+}
+
+type HargaRequest struct {
+	Tanggal string  `json:"tanggal"`
+	Harga   float64 `json:"harga"`
+}
+
+type DashboardStats struct {
+	TotalDataHarga  int     `json:"total_data_harga"`
+	TotalForecasts  int     `json:"total_forecasts"`
+	AkurasiSistem   float64 `json:"akurasi_sistem"`
+	RekomendasiHari float64 `json:"rekomendasi_hari_ini"`
+}
+
+type ChartData struct {
+	Tanggal  string  `json:"tanggal"`
+	Aktual   float64 `json:"aktual"`
+	Prediksi float64 `json:"prediksi"`
 }

@@ -21,3 +21,15 @@ CREATE TABLE IF NOT EXISTS forecasts (
     result JSONB NOT NULL,
     created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
 );
+
+CREATE TABLE IF NOT EXISTS tes_perhitungan (
+    id SERIAL PRIMARY KEY,
+    forecast_id INTEGER REFERENCES forecasts(id) ON DELETE CASCADE,
+    periode INTEGER NOT NULL,
+    tanggal DATE,
+    harga_asli NUMERIC,
+    level NUMERIC,
+    trend NUMERIC,
+    seasonal NUMERIC,
+    forecast NUMERIC
+);

@@ -16,6 +16,7 @@ type ForecastHandler struct {
 func NewForecastHandler(fs *services.ForecastService) *ForecastHandler {
 	return &ForecastHandler{forecastService: fs}
 }
+
 // Forecast godoc
 // @Summary      Hitung forecast harga cabai
 // @Description  Menghitung prediksi harga cabai menggunakan Triple Exponential Smoothing
@@ -36,14 +37,14 @@ func (h *ForecastHandler) Forecast(w http.ResponseWriter, r *http.Request) {
 	}
 
 	var req domain.ForecastRequest
-	if err := json.NewDecoder(r.Body).Decode(&req); err != nil {
+	autoOptimize := false
+
+	if err := json.NewDecoder(r.Body).Decode(&req); err != nil || req.Alpha == 0 {
 		req = domain.ForecastRequest{
-			Alpha:        0.2,
-			Beta:         0.1,
-			Gamma:        0.1,
 			SeasonLength: 12,
 			Periods:      3,
 		}
+		autoOptimize = true
 	}
 
 	response, err := h.forecastService.CalculateForecast(
@@ -55,6 +56,7 @@ func (h *ForecastHandler) Forecast(w http.ResponseWriter, r *http.Request) {
 			SeasonLength: req.SeasonLength,
 		},
 		req.Periods,
+		autoOptimize,
 	)
 	if err != nil {
 		http.Error(w, err.Error(), http.StatusInternalServerError)
@@ -63,14 +65,18 @@ func (h *ForecastHandler) Forecast(w http.ResponseWriter, r *http.Request) {
 
 	w.Header().Set("Content-Type", "application/json")
 	json.NewEncoder(w).Encode(map[string]interface{}{
-		"status":   "success",
-		"forecast": response.Forecast,
+		"status":         "success",
+		"forecast":       response.Forecast,
+		"auto_optimized": response.AutoOptimized,
+		"params_used":    response.ParamsUsed,
 		"evaluation": map[string]interface{}{
 			"mape": response.Evaluation.MAPE,
 			"rmse": response.Evaluation.RMSE,
 		},
+		"perhitungan": response.Perhitungan,
 	})
 }
+
 // GetHistory godoc
 // @Summary      Ambil riwayat forecast
 // @Description  Mengambil semua riwayat forecast milik user yang sedang login
